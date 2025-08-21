@@ -1,0 +1,1 @@
+# hawky.ai-idea-lab-chrome-extension
