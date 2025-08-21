@@ -1,1 +1,3 @@
-# hawky.ai-idea-lab-chrome-extension
+# Hawky.ai IdeaLab Chrome Extension
+
+## 📌 Project Goal  
