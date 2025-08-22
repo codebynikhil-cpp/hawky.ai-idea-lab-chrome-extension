@@ -1,0 +1,71 @@
+{
+  "manifest_version": 3,
+  "name": "Hawky Extension",
+  "version": "1.0",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting",
+    "webNavigation",
+    "downloads",
+    "cookies"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://*.instagram.com/*",
+    "https://*.x.com/*",
+    "https://x.com/*",
+    "https://*.facebook.com/*",
+    "https://*.linkedin.com/*",
+    "https://ads.google.com/*",
+    "https://admanager.google.com/*",
+    "https://www.facebook.com/ads/library/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.instagram.com/*",
+        "https://*.x.com/*",
+        "https://x.com/*",
+        "https://*.facebook.com/*"
+      ],
+      "exclude_matches": ["*://chrome.google.com/*", "https://www.facebook.com/ads/library/*"],
+      "js": ["content.js", "screenshot.js", "instagram.js", "facebook.js"]
+    },
+    {
+      "matches": ["https://*.linkedin.com/*"],
+      "js": ["content-linkedin.js"]
+    },
+    {
+      "matches": [
+        "https://ads.google.com/*",
+        "https://admanager.google.com/*"
+      ],
+      "js": ["content-googleads.js"]
+    },
+    {
+      "matches": ["https://www.facebook.com/ads/library/*"],
+      "js": ["content-metalibrary.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["popup.js","/icons/icon48.png"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

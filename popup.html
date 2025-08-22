@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html style="scrollbar-width: none" lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HAWKY.ai Extension</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        width: 350px;
+        height: auto;
+        max-height: 600px;
+        overflow: hidden;
+      }
+      .scrollable-content {
+        height: 100%;
+        overflow-y: auto;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* Internet Explorer 10+ */
+      }
+      .scrollable-content::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none; /* Chrome and Safari */
+      }
+    </style>
+  </head>
+  <body>
+    <div style="background-color: rgb(21 21 21)" class="h-full">
+      <div class="scrollable-content p-2 shadow-md">
+        <div id="login-container"></div>
+        <div id="logged-in-container"></div>
+      </div>
+    </div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
