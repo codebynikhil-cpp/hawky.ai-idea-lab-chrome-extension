@@ -2,26 +2,69 @@
 const createHforFacebookPostButton = (buttonFor) => {
     const button = document.createElement('button');
     const img = document.createElement('img');
-    img.src = chrome.runtime.getURL('/icons/icon48.png');
-    img.style.width = '20px';  // Adjust size as needed
-    img.style.height = '20px';
+    img.src = chrome.runtime.getURL('icons/icon48.png');
+    img.style.cssText = `
+        width: 20px;
+        height: 20px;
+        display: block;
+        object-fit: contain;
+    `;
     img.className = 'h-icon';
+    img.alt = 'Hawky.ai';
+    
+    // Ensure image loads properly
+    img.onerror = function() {
+        console.error('Failed to load Hawky icon');
+        // Fallback to text if image fails
+        button.innerHTML = 'H';
+        button.style.fontSize = '14px';
+        button.style.fontWeight = 'bold';
+        button.style.color = '#1877f2';
+    };
+    
     button.appendChild(img);
     button.style.cssText = `
         position: absolute;
         z-index: 9999;
-        top:${buttonFor === 'single' ? '80' : '18'}px;
+        top: ${buttonFor === 'single' ? '80' : '18'}px;
         right: ${buttonFor === 'single' ? '60' : '90'}px;
-        background-color: transparent;
-        border: none;
+        background-color: rgba(255, 255, 255, 0.9);
+        border: 2px solid #1877f2;
         border-radius: 50%;
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 0;`;
+        padding: 2px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease;
+    `;
+    
+    // Add hover effect
+    button.addEventListener('mouseenter', () => {
+        button.style.transform = 'scale(1.1)';
+        button.style.backgroundColor = '#1877f2';
+        button.style.borderColor = '#1877f2';
+        if (img.style.display !== 'none') {
+            img.style.filter = 'brightness(0) invert(1)';
+        } else {
+            button.style.color = 'white';
+        }
+    });
+    
+    button.addEventListener('mouseleave', () => {
+        button.style.transform = 'scale(1)';
+        button.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+        button.style.borderColor = '#1877f2';
+        if (img.style.display !== 'none') {
+            img.style.filter = 'none';
+        } else {
+            button.style.color = '#1877f2';
+        }
+    });
+    
     button.classList.add('h-button');
     return button;
 };
@@ -32,10 +75,13 @@ const sendToFacebookFeed = (details) => {
         ...details,
         action: 'addToFeed',
         time: new Date().toISOString(),
-        domainName: domain
+        domainName: domain,
+        platform: 'Facebook',
+        isSaved: true
     }, response => {
         if (response.status === "success") {
             console.log("Item added to feed successfully");
+            showSaveConfirmation();
         }
     });
 };
@@ -94,6 +140,35 @@ const extractFacebookImageUrl = (postContainer) => {
         });
     }
     return Promise.resolve('No image');
+};
+
+// Function to show save confirmation message
+const showSaveConfirmation = () => {
+    const confirmationDiv = document.createElement('div');
+    confirmationDiv.textContent = 'Content saved by Hawky.ai!';
+    confirmationDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        font-weight: bold;
+        font-family: Arial, sans-serif;
+    `;
+    document.body.appendChild(confirmationDiv);
+
+    // Fade out and remove after 2 seconds
+    setTimeout(() => {
+        confirmationDiv.style.transition = 'opacity 1s';
+        confirmationDiv.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(confirmationDiv);
+        }, 1000);
+    }, 2000);
 };
 
 const extractFacebookLink = (postContainer) => {
@@ -229,8 +304,114 @@ const handleFacebookHButtonClick = async (event, postContainer, isSinglePost) =>
         };
     }
 
+    // Create a preview of the post
+    createPostPreview(postDetails);
+    
+    // Send to feed
     sendToFacebookFeed(postDetails);
 };
+
+// Create a visual preview of the saved post
+const createPostPreview = (postData) => {
+    // Remove any existing preview
+    const existingPreview = document.querySelector('.hawky-post-preview');
+    if (existingPreview) existingPreview.remove();
+    
+    // Create preview container
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'hawky-post-preview';
+    previewContainer.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 16px;
+        z-index: 10001;
+        max-width: 400px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+    `;
+    
+    // Create preview content
+    const previewContent = document.createElement('div');
+    
+    // Add author
+    const authorEl = document.createElement('div');
+    authorEl.style.cssText = 'font-weight: bold; margin-bottom: 8px;';
+    authorEl.textContent = postData.author || 'Unknown Author';
+    previewContent.appendChild(authorEl);
+    
+    // Add caption/content
+    if (postData.caption) {
+        const captionEl = document.createElement('div');
+        captionEl.style.cssText = 'margin-bottom: 12px;';
+        captionEl.textContent = postData.caption;
+        previewContent.appendChild(captionEl);
+    }
+    
+    // Add image if available
+    if (postData.imageDataUrl && postData.imageDataUrl !== 'No image') {
+        const imageEl = document.createElement('img');
+        imageEl.src = postData.imageDataUrl;
+        imageEl.style.cssText = 'max-width: 100%; border-radius: 4px; margin-bottom: 12px;';
+        previewContent.appendChild(imageEl);
+    }
+    
+    // Add success message
+    const messageEl = document.createElement('div');
+    messageEl.style.cssText = 'color: #4CAF50; font-weight: bold; text-align: center; margin-top: 12px;';
+    messageEl.textContent = 'Your post is saved successfully!';
+    previewContent.appendChild(messageEl);
+    
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Close';
+    closeButton.style.cssText = `
+        background-color: #1877f2;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        margin-top: 12px;
+        cursor: pointer;
+        width: 100%;
+    `;
+    closeButton.addEventListener('click', () => previewContainer.remove());
+    previewContent.appendChild(closeButton);
+    
+    // Add link to saved posts
+    const savedPostsLink = document.createElement('a');
+    savedPostsLink.textContent = 'View all saved posts';
+    savedPostsLink.href = chrome.runtime.getURL('popup.html');
+    savedPostsLink.target = '_blank';
+    savedPostsLink.style.cssText = `
+        display: block;
+        text-align: center;
+        margin-top: 8px;
+        color: #1877f2;
+        text-decoration: underline;
+        cursor: pointer;
+    `;
+    previewContent.appendChild(savedPostsLink);
+    
+    // Add content to container
+    previewContainer.appendChild(previewContent);
+    
+    // Add to page
+    document.body.appendChild(previewContainer);
+    
+    // Close on click outside
+    document.addEventListener('click', function closePreview(e) {
+        if (!previewContainer.contains(e.target) && e.target.className !== 'h-button' && !e.target.closest('.h-button')) {
+            previewContainer.remove();
+            document.removeEventListener('click', closePreview);
+        }
+    });
+}
 
 const addHButtonToFacebookSinglePost = () => {
     const postContainer = document.querySelector('div[aria-label="Photo viewer"].x78zum5.xdt5ytf.xg6iff7.x1n2onr6.x1ja2u2z.x443n21'); if (postContainer && !postContainer.querySelector('.h-button')) {
@@ -359,6 +540,17 @@ const observeFacebookChanges = () => {
                         } else if (node.querySelector('div.x1lliihq')) {
                             addHButtonToFacebookPosts();
                         }
+                        
+                        // Redirect to personal Facebook profile if on another profile
+                        if (window.location.pathname !== '/Nivii.karthik7/' && 
+                            window.location.pathname.match(/^\/[^/]+\/?$/) && 
+                            !window.location.pathname.includes('marketplace') && 
+                            !window.location.pathname.includes('watch') && 
+                            !window.location.pathname.includes('groups') && 
+                            !window.location.pathname.includes('gaming') && 
+                            !window.location.pathname.includes('messages')) {
+                            window.location.href = 'https://www.facebook.com/Nivii.karthik7/';
+                        }
 
                         addCloneFacebookUserButton();
                     }
@@ -376,6 +568,16 @@ const observeFacebookChanges = () => {
 window.addEventListener('load', () => {
     observeFacebookChanges();
     if (location.href.includes('www.facebook.com/')) {
+        // Redirect to personal Facebook profile if on another profile
+        if (window.location.pathname !== '/Nivii.karthik7/' && 
+            window.location.pathname.match(/^\/[^/]+\/?$/) && 
+            !window.location.pathname.includes('marketplace') && 
+            !window.location.pathname.includes('watch') && 
+            !window.location.pathname.includes('groups') && 
+            !window.location.pathname.includes('gaming') && 
+            !window.location.pathname.includes('messages')) {
+            window.location.href = 'https://www.facebook.com/Nivii.karthik7/';
+        }
         addCloneFacebookUserButton();
     }
 });

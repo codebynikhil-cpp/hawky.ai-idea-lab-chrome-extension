@@ -1,0 +1,29 @@
+{
+  "name": "hawky.ai-idea-lab-chrome-extension",
+  "version": "1.0.0",
+  "description": "The Hawky.ai Chrome Extension is a powerful tool for digital marketers, competitive analysts, and creative teams to capture and organize ad creatives from multiple platforms. This extension enables seamless collection of ads from LinkedIn, Google Ads, Meta Ads Library, Instagram, Facebook, and X (Twitter).",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tailwindcss -i ./src/input.css -o ./output.css",
+    "watch": "tailwindcss -i ./src/input.css -o ./output.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nivashinii/hawky.ai-idea-lab-chrome-extension.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Nivashinii/hawky.ai-idea-lab-chrome-extension/issues"
+  },
+  "homepage": "https://github.com/Nivashinii/hawky.ai-idea-lab-chrome-extension#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  },
+  "dependencies": {
+    "html2canvas": "^1.4.1"
+  }
+}

@@ -1,11 +1,35 @@
-// Import the route functions
-import { getIdeas, checkNetworkStatus } from './route.js';
+// Fallback functions for route.js functionality
+const getIdeas = async () => {
+  try {
+    // Simple fallback - return empty array
+    return [];
+  } catch (error) {
+    console.error('Error in getIdeas fallback:', error);
+    return [];
+  }
+};
+
+const checkNetworkStatus = () => {
+  return navigator.onLine;
+};
 
 let isLoggedIn = false;
 let userDetails = null;
 let lastDownloadTime = 0;
 const DOWNLOAD_COOLDOWN = 1000;
 let feedItems = [];
+let savedPosts = []; // Array to store saved posts
+
+// Initialize saved posts from storage
+chrome.storage.local.get(['savedPosts'], (result) => {
+  if (result.savedPosts && Array.isArray(result.savedPosts)) {
+    savedPosts = result.savedPosts;
+    console.log('Loaded saved posts from storage:', savedPosts.length, 'posts');
+  } else {
+    savedPosts = [];
+    console.log('No saved posts found in storage, initializing empty array');
+  }
+});
 
 function getCookies(domain, names) {
   return Promise.all(names.map(name =>
@@ -106,13 +130,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return;
           }
           
-          try {
-            addFeedItem({ imageDataUrl: dataUrl, domainName: request.domainName, time: request.time });
-            sendResponse({ status: "success", image: dataUrl });
-          } catch (error) {
-            console.error("Error adding feed item:", error);
-            sendResponse({ status: "error", message: error.message });
-          }
+          sendResponse({ status: "success", image: dataUrl });
         });
         return true; // Will respond asynchronously
         
@@ -134,8 +152,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           sendResponse({status: "success", image: dataUrl});
         });
         return true;  // Will respond asynchronously
-      }
-    case "captureArea":
+        
+      case "captureArea":
       try {
         // Create a new Image to load the screenshot
         const img = new Image();
@@ -261,17 +279,49 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ isLoggedIn, userDetails });
       return true;
     case "addToFeed":
+      console.log('Received addToFeed request:', request);
       addFeedItem(request);
-      sendResponse({ status: "success" });
+      sendResponse({ status: "success", message: "Post added to feed successfully" });
       return true;
     case "getFeedItems":
-      sendResponse(feedItems);
+      // Return savedPosts if getSaved is true, otherwise return regular feedItems
+      sendResponse(request.getSaved ? savedPosts : feedItems);
+      return true;
+    case "getSavedPosts":
+      console.log('Returning saved posts:', savedPosts.length, 'posts');
+      sendResponse(savedPosts);
+      return true;
+    case "deleteSavedPost":
+      savedPosts = savedPosts.filter(post => post.id !== request.postId);
+      chrome.storage.local.set({ savedPosts: savedPosts });
+      sendResponse({ status: "success" });
       return true;
     case "getIdeas":
       getIdeas().then(ideas => sendResponse(ideas));
       return true;
+    case "openSavedPosts":
+      const savedPostsUrl = chrome.runtime.getURL('saved-posts.html');
+      chrome.tabs.create({ url: savedPostsUrl });
+      sendResponse({ status: "success" });
+      return true;
+    case "fetchData":
+      // Route fetch requests through background script to avoid CORS issues
+      fetch(request.url, {
+        method: request.method || 'GET',
+        headers: request.headers || {}
+      })
+      .then(response => response.text())
+      .then(data => sendResponse({ success: true, data }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
   }
+} catch (error) {
+  console.error("Error in message handler:", error);
+  sendResponse({ status: "error", message: error.message });
+  return true;
+}
 });
+
 
 function handleDownload(request, sendResponse) {
   const currentTime = Date.now();
@@ -296,13 +346,34 @@ function handleDownload(request, sendResponse) {
 }
 
 function addFeedItem(item) {
-  const keys = ['author', 'date', 'caption', 'imageDataUrl', 'domainName', 'directLink','time','shares','comments','likes'];
-  const newItems = Object.fromEntries(
-    keys.filter(key => item[key]).map(key => [key, item[key]])
+  const keys = ['author', 'date', 'caption', 'content', 'imageDataUrl', 'domainName', 'directLink', 'time', 'shares', 'comments', 'likes', 'platform', 'url', 'images', 'videoUrl', 'id', 'savedAt'];
+  const newItem = Object.fromEntries(
+    keys.filter(key => item[key] !== undefined).map(key => [key, item[key]])
   );
   
-  feedItems.unshift(newItems);
-  if (feedItems.length > 50) feedItems = feedItems.slice(0, 50);
+  // Add unique ID and timestamp if not already provided
+  if (!newItem.id) {
+    newItem.id = Date.now() + Math.random().toString(36).substr(2, 9);
+  }
+  if (!newItem.savedAt) {
+    newItem.savedAt = new Date().toISOString();
+  }
+  
+  console.log('Adding feed item:', newItem);
+  
+  // Check if this is a saved post (from clicking the Hawky button)
+  if (item.isSaved) {
+    savedPosts.unshift(newItem);
+    if (savedPosts.length > 100) savedPosts = savedPosts.slice(0, 100);
+    
+    // Save to persistent storage
+    chrome.storage.local.set({ savedPosts: savedPosts }, () => {
+      console.log('Saved posts updated in storage. Total saved posts:', savedPosts.length);
+    });
+  } else {
+    feedItems.unshift(newItem);
+    if (feedItems.length > 50) feedItems = feedItems.slice(0, 50);
+  }
 }
 
 // Process LinkedIn creative
@@ -541,13 +612,37 @@ function processGenericCreative(creativeData, sender, sendResponse) {
 // Initialize the extension
 console.log("Hawky.ai extension background script loaded");
 
-// Global error handler for unhandled promise rejections
-window.addEventListener('unhandledrejection', function(event) {
+// Add service worker registration debugging
+chrome.runtime.onStartup.addListener(() => {
+  console.log('Service worker startup event triggered');
+});
+
+chrome.runtime.onInstalled.addListener((details) => {
+  console.log('Extension installed/updated:', details.reason);
+  if (details.reason === 'install') {
+    console.log('Extension installed for the first time');
+  } else if (details.reason === 'update') {
+    console.log('Extension updated from version:', details.previousVersion);
+  }
+});
+
+// Enhanced error handlers for service worker
+self.addEventListener('unhandledrejection', function(event) {
   console.error('Unhandled promise rejection:', event.reason);
 });
 
-// Global error handler
-window.onerror = function(message, source, lineno, colno, error) {
-  console.error('Global error:', { message, source, lineno, colno, error });
-  return false;
-};
+self.addEventListener('error', function(event) {
+  console.error('Service worker error:', event.error);
+});
+
+// Fallback error handlers for backward compatibility
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', function(event) {
+    console.error('Window unhandled promise rejection:', event.reason);
+  });
+  
+  window.onerror = function(message, source, lineno, colno, error) {
+    console.error('Window global error:', { message, source, lineno, colno, error });
+    return false;
+  };
+}

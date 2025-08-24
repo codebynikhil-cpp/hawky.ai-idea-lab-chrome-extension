@@ -8,18 +8,18 @@
     "scripting",
     "webNavigation",
     "downloads",
-    "cookies"
+    "cookies",
+    "storage"
   ],
   "host_permissions": [
-    "<all_urls>",
+    "https://www.instagram.com/*",
     "https://*.instagram.com/*",
-    "https://*.x.com/*",
-    "https://x.com/*",
+    "https://www.facebook.com/*",
     "https://*.facebook.com/*",
+    "https://www.linkedin.com/*",
     "https://*.linkedin.com/*",
     "https://ads.google.com/*",
-    "https://admanager.google.com/*",
-    "https://www.facebook.com/ads/library/*"
+    "https://admanager.google.com/*"
   ],
   "action": {
     "default_popup": "popup.html"
@@ -28,16 +28,22 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*.instagram.com/*",
-        "https://*.x.com/*",
-        "https://x.com/*",
+        "https://*.instagram.com/*"
+      ],
+      "exclude_matches": ["*://chrome.google.com/*"],
+      "js": ["content.js", "screenshot.js", "instagram.js"]
+    },
+    {
+      "matches": [
         "https://*.facebook.com/*"
       ],
       "exclude_matches": ["*://chrome.google.com/*", "https://www.facebook.com/ads/library/*"],
-      "js": ["content.js", "screenshot.js", "instagram.js", "facebook.js"]
+      "js": ["content.js", "screenshot.js", "facebook.js"]
     },
     {
-      "matches": ["https://*.linkedin.com/*"],
+      "matches": [
+        "https://*.linkedin.com/*"
+      ],
       "js": ["content-linkedin.js"]
     },
     {
@@ -53,15 +59,19 @@
     }
   ],
   "web_accessible_resources": [
-    {
-      "resources": ["popup.js","/icons/icon48.png"],
-      "matches": ["<all_urls>"]
-    }
-  ],
+  {
+    "resources": ["icons/*"],
+    "matches": ["https://*.instagram.com/*", "https://*.facebook.com/*", "https://*.linkedin.com/*"]
+  }
+],
+"options_page": "saved-posts.html",
+"options_ui": {
+  "page": "saved-posts.html",
+  "open_in_tab": true
+},
 
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   "icons": {
     "16": "icons/icon16.png",

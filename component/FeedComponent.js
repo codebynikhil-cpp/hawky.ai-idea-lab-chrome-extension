@@ -2,11 +2,16 @@ class FeedComponent {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
     this.feedItems = [];
+    this.currentView = 'feed'; // 'feed' or 'saved'
     this.loadFeedItems();
   }
 
   loadFeedItems() {
-    chrome.runtime.sendMessage({ action: 'getFeedItems' }, (response) => {
+    // Pass getSaved flag based on current view
+    chrome.runtime.sendMessage({ 
+      action: 'getFeedItems',
+      getSaved: this.currentView === 'saved'
+    }, (response) => {
       this.feedItems = response;
       this.render();
     });
@@ -14,6 +19,8 @@ class FeedComponent {
 
   render() {
     const feedHtml = this.feedItems.map(this.renderFeedItem).join('');
+    const title = this.currentView === 'saved' ? 'Your Saved Posts' : 'Recent Captures';
+    
     this.container.innerHTML = `
       <div class="feed-container bg-[#1e1e1e] text-white p-2">
         <div class="feed-header mb-4 flex items-center justify-between">
@@ -22,15 +29,21 @@ class FeedComponent {
           </div>
           <img src='assets/hawkyLogo.png' alt='Profile' class='w-8 h-8 rounded-full'/>
         </div>
-        <div class="w-full gap-2 px-2 mb-4 flex items-center">
-          <button id="captureFullScreen" class="bg-gray-500 hover:bg-gray-700 p-1 text-white font-bold rounded">
-            Full Screen
-          </button>
-          <button id="captureArea" class="bg-gray-500 hover:bg-gray-700 p-1 text-white font-bold rounded">
-            Capture Area
+        <div class="w-full gap-2 px-2 mb-4 flex items-center justify-between">
+          <div>
+            <button id="captureFullScreen" class="bg-gray-500 hover:bg-gray-700 p-1 text-white font-bold rounded">
+              Full Screen
+            </button>
+            <button id="captureArea" class="bg-gray-500 hover:bg-gray-700 p-1 text-white font-bold rounded">
+              Capture Area
+            </button>
+          </div>
+          <button id="toggleSavedPosts" class="bg-blue-500 hover:bg-blue-700 p-1 text-white font-bold rounded">
+            ${this.currentView === 'saved' ? 'View Feed' : 'Saved Posts'}
           </button>
         </div>
-        ${feedHtml}
+        <h2 class="text-xl font-bold mb-4 px-2">${title}</h2>
+        ${feedHtml.length > 0 ? feedHtml : `<div class="text-center py-4">No ${this.currentView === 'saved' ? 'saved posts' : 'captures'} yet</div>`}
       </div>
     `;
   
@@ -65,6 +78,12 @@ class FeedComponent {
           }
         });
       });
+    });
+    
+    // Add event listener for toggling between feed and saved posts
+    document.getElementById('toggleSavedPosts').addEventListener('click', () => {
+      this.currentView = this.currentView === 'feed' ? 'saved' : 'feed';
+      this.loadFeedItems();
     });
     
   }
