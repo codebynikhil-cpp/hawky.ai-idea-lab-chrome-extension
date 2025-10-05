@@ -55,6 +55,7 @@
             text-align: center;
             color: white;
             min-width: 150px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
 
         .stat-number {
@@ -77,6 +78,7 @@
             backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 20px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
 
         .search-box {
@@ -182,6 +184,16 @@
 
         .platform-linkedin {
             background: #0077b5;
+            color: white;
+        }
+
+        .platform-meta-ads-library {
+            background: #6a5acd;
+            color: white;
+        }
+
+        .platform-google-ads {
+            background: #4285f4;
             color: white;
         }
 
@@ -380,6 +392,14 @@
                 <div class="stat-number" id="linkedinPosts">0</div>
                 <div class="stat-label">LinkedIn</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-number" id="metaAdsPosts">0</div>
+                <div class="stat-label">Meta Ads Library</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="googleAdsPosts">0</div>
+                <div class="stat-label">Google Ads</div>
+            </div>
         </div>
 
         <div class="controls">
@@ -391,6 +411,8 @@
                 <button class="filter-btn" data-filter="Instagram">Instagram</button>
                 <button class="filter-btn" data-filter="Facebook">Facebook</button>
                 <button class="filter-btn" data-filter="LinkedIn">LinkedIn</button>
+                <button class="filter-btn" data-filter="Meta Ads Library">Meta Ads Library</button>
+                <button class="filter-btn" data-filter="Google Ads">Google Ads</button>
             </div>
         </div>
 
@@ -403,8 +425,8 @@
 
         <div id="emptyState" class="empty-state" style="display: none;">
             <div style="font-size: 4rem; margin-bottom: 20px;">📱</div>
-            <h3>No saved posts yet</h3>
-            <p>Start saving posts from Instagram, Facebook, and LinkedIn by clicking the Hawky button on any post!</p>
+            <h3>No saved post yet</h3>
+            <p>Start saving posts from Instagram, Facebook, LinkedIn, Meta Ads Library, and Google Ads by clicking the Hawky button on any post!</p>
         </div>
     </div>
 

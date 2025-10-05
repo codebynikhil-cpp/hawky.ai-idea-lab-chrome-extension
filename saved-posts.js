@@ -15,6 +15,8 @@ const totalPostsEl = document.getElementById('totalPosts');
 const instagramPostsEl = document.getElementById('instagramPosts');
 const facebookPostsEl = document.getElementById('facebookPosts');
 const linkedinPostsEl = document.getElementById('linkedinPosts');
+const googleAdsPostsEl = document.getElementById('googleAdsPosts');
+const metaAdsPostsEl = document.getElementById('metaAdsPosts');
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', () => {
@@ -116,13 +118,21 @@ function updateStats() {
         total: allPosts.length,
         Instagram: allPosts.filter(p => p.platform === 'Instagram').length,
         Facebook: allPosts.filter(p => p.platform === 'Facebook').length,
-        LinkedIn: allPosts.filter(p => p.platform === 'LinkedIn').length
+        LinkedIn: allPosts.filter(p => p.platform === 'LinkedIn').length,
+        'Meta Ads Library': allPosts.filter(p => p.platform === 'Meta Ads Library').length,
+        'Google Ads': allPosts.filter(p => p.platform === 'Google Ads').length
     };
     
     totalPostsEl.textContent = stats.total;
     instagramPostsEl.textContent = stats.Instagram;
     facebookPostsEl.textContent = stats.Facebook;
     linkedinPostsEl.textContent = stats.LinkedIn;
+    if (googleAdsPostsEl) {
+        googleAdsPostsEl.textContent = stats['Google Ads'];
+    }
+    if (metaAdsPostsEl) {
+        metaAdsPostsEl.textContent = stats['Meta Ads Library'];
+    }
 }
 
 // Render posts
@@ -156,7 +166,7 @@ function renderPosts() {
 // Update the createPostCard function to handle post links better
 function createPostCard(post) {
     const formattedDate = formatDate(post.savedAt || post.time);
-    const platformClass = `platform-${post.platform.toLowerCase()}`;
+    const platformClass = `platform-${(post.platform || 'unknown').toLowerCase().replace(/\s+/g, '-')}`;
     const hasImage = post.imageDataUrl && post.imageDataUrl !== 'undefined';
     const hasVideo = post.videoUrl && post.videoUrl !== 'undefined';
     
